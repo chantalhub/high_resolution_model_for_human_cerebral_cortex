@@ -18,10 +18,5 @@ counts = accumarray(labels, 1, [m,1]);
 mean_t1wt2w = accumarray(labels, t1wt2w, [m, 1], @mean, NaN);
 
 non_nan_idx = find(~isnan(mean_t1wt2w));
-[r4, p4] = corrcoef(mean_t1wt2w(non_nan_idx), pc1_scores_mean(non_nan_idx));
-
-f = figure('Units', 'centimeters', 'Position', [2, 2, 6.4, 4.8]);
-scatter(mean_t1wt2w(non_nan_idx), pc1_scores_mean(non_nan_idx), 5, 'filled')
-xlabel('T1w/T2w');
-ylabel('PC 1');
-set(gca, 'FontName', 'Arial', 'FontSize', 8);
+corr_mat = corrcoef(mean_t1wt2w(non_nan_idx), pc1_scores_mean(non_nan_idx));
+r_t1wt2w_score1 = corr_mat(1, 2);
