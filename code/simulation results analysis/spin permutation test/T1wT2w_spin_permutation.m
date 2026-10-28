@@ -40,9 +40,6 @@ for r = 1:n_rep
     t1wt2w_perm(:, r) = Y_full_perm(index, :);
 end
 
-% 保存置换后的相位时间序列，用于后续计算零分布
-%save('spin_permuted_phase_ts.mat', 'phase_ts_perm');
-
 % ===== 背侧通路 dorsal（左半球，181-360）=====
 dorsal_left = find(label1 == 182 | label1 == 183 | label1 == 193 | label1 == 196 | label1 == 197 | label1 == 199 | label1 == 200 | label1 == 201 | label1 == 203 | label1 == 209 | label1 == 222 | label1 == 225 | label1 == 226 | label1 == 227 | label1 == 228 | label1 == 229 | label1 == 230 | label1 == 275 | label1 == 297 | label1 == 324 | label1 == 325 | label1 == 326 | label1 == 332 | label1 == 336 | label1 == 337 | label1 == 338 | label1 == 339);
 
