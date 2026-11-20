@@ -1,0 +1,48 @@
+1.NMDA受体密度数据处理：
+（1.1）利用tpl-MNI152NLin2009cAsym_space-MNI_res-01_brainmask.nii将图像中属于大脑的部分取出
+在matlab上运行以下命令行：
+>> nii = spm_vol('C:\Users\37884\Desktop\NMDA数据处理\tpl-MNI152NLin2009cAsym_res-01_desc-brain_mask.nii\tpl-MNI152NLin2009cAsym_space-MNI_res-01_brainmask.nii');
+>> mask = spm_read_vols(nii);
+>> nii1 = spm_vol( 'C:\Users\37884\Desktop\NMDA数据处理\NMDAR_mean.nii' );
+>> nmda = spm_read_vols(nii1);
+>> data = mask.*nmda;
+>> nii2 = nii1;
+>> nii2.fname = ['C:\Users\37884\Desktop\', 'NMDAR_mean_brain.nii'];
+>> spm_write_vol(nii2,data);
+（1.2）由于neuromaps中使用的MNI152空间模板是MNI152NLin6Sym模板，所以需要将NMDAR_mean_brain.nii从MNI152NLin2009cAsym模板配准到MNI152NLin6Sym模板上。
+在服务器上运行以下命令行：
+①flirt -in ./registration/tpl-MNI152NLin2009cAsym_space-MNI_res-01_T1w.nii -ref ./registration/tpl-MNI152NLin6Sym_res-01_T1w.nii -out ./registration/MNI152NLin2009cAsym_to_MNI152NLin6Sym.nii -omat ./registration/MNI152NLin2009cAsym_to_MNI152NLin6Sym_01.dat -cost normmi
+②flirt -in ./registration/NMDAR_mean_brain.nii -ref ./registration/tpl-MNI152NLin6Sym_res-01_T1w.nii -out ./registration/NMDAR_mean_brain_reg.nii -init ./registration/MNI152NLin2009cAsym_to_MNI152NLin6Sym_01.dat -applyxfm
+（1.3）为了与空间精度为3mm×3mm×3mm的GABAa受体密度数据保持一致，利用nilearn工具包将空间精度为1mm×1mm×1mm的NMDAR_mean_brain_reg.nii下采样为3mm×3mm×3mm，并保存为rNMDAR_mean_brain_reg.nii。
+（1.4）采用FWHM为8mm的高斯平滑核，利用SPM12对rNMDAR_mean_brain_reg.nii进行空间平滑，并保存为srNMDAR_mean_brain_reg.nii。
+（1.5）利用neuromaps工具包中neuromaps.transforms.mni152_to_fslr函数将NMDAR_mean.nii从MNI152空间转到fsLR32k空间，具体命令如下：
+在jupyter notebook上运行以下命令行：
+import neuromaps.transforms
+
+surf = neuromaps.transforms.mni152_to_fslr(r'C:\Users\37884\Desktop\srNMDAR_mean_brain_reg.nii', fslr_density='32k', method='linear')
+surf[0].to_filename(r'C:\Users\37884\Desktop\lh.srNMDAR_mean_brain_reg.shape.gii')
+surf[1].to_filename(r'C:\Users\37884\Desktop\rh.srNMDAR_mean_brain_reg.shape.gii')
+
+2.GABAa受体密度数据处理：
+（2.1）将GABAa_flumazenil_hc6_dukart.nii从MNI152Lin模板配准到MNI152NLin6Sym模板上，并将配准后的数据保存为GABAa_flumazenil_hc6_dukart_reg.nii。由于没有MNI152Lin模板和MNI152NLin6Sym模板均没有3mm×3mm×3mm的T1加权像，所以先将1mm×1mm×1mm的T1加权像下采样到3mm×3mm×3mm，再进行配准。
+在jupyter notebook上运行以下命令行：
+①import nibabel as nib
+from nilearn.image import resample_img
+import numpy as np
+
+img = nib.load(r'C:\Users\37884\Desktop\tpl-MNI152Lin_res-01_T1w.nii\tpl-MNI152Lin_space-MNI_res-01_T1w.nii')
+target_affine = np.diag([3, 3, 3])
+resampled_img = resample_img(img, target_affine=target_affine)
+print(resampled_img.shape)
+resampled_img.to_filename(r'C:\Users\37884\Desktop\tpl-MNI152Lin_res-01_T1w.nii\rtpl-MNI152Lin_space-MNI_res-01_T1w.nii')
+在服务器上运行以下命令行：
+②flirt -in ./registration/rtpl-MNI152Lin_space-MNI_res-01_T1w.nii -ref ./registration/rtpl-MNI152NLin6Sym_res-01_T1w.nii -out ./registration/MNI152Lin_to_MNI152NLin6Sym.nii -omat ./registration/MNI152NLin_to_MNI152NLin6Sym_03.dat -cost normmi
+③flirt -in ./registration/GABAa_flumazenil_hc6_dukart.nii -ref ./registration/rtpl-MNI152NLin6Sym_res-01_T1w.nii -out ./registration/GABAa_flumazenil_hc6_dukart_reg.nii -init ./registration/MNI152NLin_to_MNI152NLin6Sym_03.dat -applyxfm
+（2.2）利用neuromaps工具包中neuromaps.transforms.mni152_to_fslr函数将GABAa_flumazenil_hc6_dukart_reg.nii从MNI152空间转到fsLR32k空间，具体命令如下：
+在jupyter notebook上运行以下命令行：
+import neuromaps.transforms
+
+surf = neuromaps.transforms.mni152_to_fslr(r'C:\Users\37884\Desktop\GABAa_flumazenil_hc6_dukart_reg.nii\GABAa_flumazenil_hc6_dukart_reg.nii', fslr_density='32k', method='linear')
+surf[0].to_filename(r'C:\Users\37884\Desktop\lh.GABAa_flumazenil_hc6_dukart_reg.shape.gii')
+surf[1].to_filename(r'C:\Users\37884\Desktop\rh.GABAa_flumazenil_hc6_dukart_reg.shape.gii')
+
